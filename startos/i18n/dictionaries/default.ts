@@ -1,0 +1,60 @@
+export const DEFAULT_LANG = 'en_US'
+
+const dict = {
+  'Require access secret': 0,
+  'On, every ImmichFrame address carries the secret, and a screen without it asks for it. Off, the slideshow is public: anyone who can reach ImmichFrame sees your photos.': 1,
+  'Configure Access Secret': 2,
+  'Make the slideshow private, so it shows photos only at addresses that carry the access secret, or public, so anyone who can reach ImmichFrame sees it.': 3,
+  'Slideshow Public': 4,
+  'Anyone who can reach ImmichFrame can now see the slideshow. Requiring the secret again restores the same one, so your frames keep working.': 5,
+  'Access Secret Required': 6,
+  'Every ImmichFrame address now carries this secret. A frame opened at one of them keeps it; a frame without it asks for it.': 7,
+  'Immich account': 8,
+  'Whose photos the slideshow shows.': 9,
+  'Connect Immich': 10,
+  'Add an Immich account on this server to the slideshow, using a new Immich API key that can only view that account’s library. Connecting an account again replaces its key and keeps its slideshow settings.': 11,
+  Immich: 12,
+  'Requires Immich 3.3.1:1 or later': 13,
+  'Start Immich first': 14,
+  'No admin password is set': 15,
+  'Immich has no address ImmichFrame can reach': 16,
+  'That Immich account no longer exists': 17,
+  'ImmichFrame could not reach Immich: ${detail}': 18,
+  'Immich Connected': 19,
+  'The slideshow now includes ${email}’s whole library. To narrow it to albums, people or tags, edit the account on the ImmichFrame admin page. Immich lists the key as “ImmichFrame” among that account’s API keys.': 20,
+  'Disconnect Immich': 21,
+  'Remove an Immich account from the slideshow, and delete the Immich API key ImmichFrame used for it.': 22,
+  'That Immich account is not connected': 23,
+  'Immich Disconnected': 24,
+  'The slideshow no longer shows ${email}’s photos, and the key ImmichFrame used is deleted from Immich.': 25,
+  'Reset Access Secret': 26,
+  'Replace the access secret with a new one, for example after a frame is lost. Every frame then has to be opened again at an ImmichFrame address.': 27,
+  'Every frame asks for the secret again until it is opened at an ImmichFrame address, or given the new secret.': 28,
+  'New Access Secret': 29,
+  'Every ImmichFrame address now carries the new secret. Open one on each frame again.': 30,
+  'Set Admin Password': 31,
+  'Generate a new random password for the ImmichFrame admin page. Replaces any existing password.': 32,
+  'Replaces the current admin password.': 33,
+  'Admin Password': 34,
+  'Use this password to sign in on the ImmichFrame Admin interface.': 35,
+  'Time zone': 36,
+  'Set Time Zone': 37,
+  'Choose the time zone ImmichFrame shows calendar events in. The clock follows each frame’s own time zone. ImmichFrame restarts to apply it.': 38,
+  'Create the password for the ImmichFrame admin page, where you add Immich accounts and choose what the slideshow shows.': 39,
+  Slideshow: 40,
+  'The photo slideshow to open on each frame': 41,
+  Admin: 42,
+  'Where you add Immich accounts and choose which photos the slideshow shows, and how': 43,
+  'Web Interface': 44,
+  'The web interface is ready': 45,
+  'The web interface is not ready': 46,
+  'ImmichFrame refused the request: ${detail}': 47,
+  'Immich did not return an API key': 48,
+} as const
+
+/**
+ * Plumbing. DO NOT EDIT.
+ */
+export type I18nKey = keyof typeof dict
+export type LangDict = Record<(typeof dict)[I18nKey], string>
+export default dict
