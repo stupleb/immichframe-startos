@@ -1,0 +1,159 @@
+<p align="center">
+  <img src="icon.svg" alt="ImmichFrame Logo" width="21%">
+</p>
+
+# ImmichFrame on StartOS
+
+> Everything not listed in this document should behave the same as upstream
+> ImmichFrame. If a feature, setting, or behavior is not mentioned here, the
+> upstream documentation is accurate and fully applicable — see the
+> Documentation section of `instructions.md` for links.
+
+[ImmichFrame](https://github.com/immichFrame/ImmichFrame) turns a browser, tablet, TV or photo frame into a slideshow of photos from one or more Immich servers. This package runs it with a StartOS-owned admin password and access secret, and can connect it to Immich on the same server with a key it mints there.
+
+---
+
+## Table of Contents
+
+- [Image and Container Runtime](#image-and-container-runtime)
+- [Volume and Data Layout](#volume-and-data-layout)
+- [File Models](#file-models)
+- [Dependencies](#dependencies)
+- [Network Access and Interfaces](#network-access-and-interfaces)
+- [Installation and First-Run Flow](#installation-and-first-run-flow)
+- [Actions](#actions)
+- [Tasks](#tasks)
+- [Health Checks](#health-checks)
+- [Backups and Restore](#backups-and-restore)
+- [Limitations and Differences](#limitations-and-differences)
+- [Quick Reference for AI Consumers](#quick-reference-for-ai-consumers)
+
+---
+
+## Image and Container Runtime
+
+The package runs upstream's published image unmodified, for x86_64 and aarch64, with its own entrypoint (`dotnet ImmichFrame.WebApi.dll`) as uid 1000.
+
+One subcontainer, `immichframe-sub`, runs three steps in order:
+
+- `chown` — a oneshot, as root, that gives uid 1000 the `config` and `cache` volumes.
+- `immichframe` — the ImmichFrame server.
+- `apply-settings` — a oneshot that, once the server is listening, writes the StartOS-owned settings into ImmichFrame through its admin API (see [File Models](#file-models)).
+
+## Volume and Data Layout
+
+Three volumes. ImmichFrame keeps all of its own settings, Immich accounts and API keys included, in one SQLite database.
+
+| Volume    | Mount point       | Holds                                                                                         |
+| --------- | ----------------- | --------------------------------------------------------------------------------------------- |
+| `config`  | `/app/Config`     | `immichframe.db`, ImmichFrame's settings database                                             |
+| `cache`   | `/app/ImageCache` | photos ImmichFrame downloads when **DownloadImages** is on in its admin page; empty otherwise |
+| `startos` | not mounted       | `store.json`                                                                                  |
+
+## File Models
+
+The package writes no ImmichFrame configuration file; ImmichFrame's settings database is the source of truth and is edited in its admin page. The package keeps its own state in `store.json` and pushes two values from it into that database.
+
+`store.json` holds:
+
+- `adminPassword` — written by **Set Admin Password**. It reaches ImmichFrame as `IMMICHFRAME_ADMIN_PASSWORD`, which ImmichFrame reads on every start and which overrides the **AdminPassword** setting in its admin page, so that setting has no effect.
+- `frameSecret` and `requireSecret` — the access secret, generated at install, and whether the slideshow requires it. **Configure Access Secret** sets `requireSecret` and leaves the secret stored while it is off; **Reset Access Secret** replaces the secret. On every start `apply-settings` writes the secret to ImmichFrame's **AuthenticationSecret** setting while it is required, and clears that setting while it is not, so a value typed into the admin page lasts only until the next start.
+- `timeZone` — written by **Set Time Zone**, `UTC` until then. It reaches ImmichFrame as `TZ`. ImmichFrame uses it for calendar events; each frame's clock runs in the browser's own time zone.
+- `immichConnections` — one entry per account added by **Connect Immich**: the Immich user, its email, and the key's id and secret. On every start `apply-settings` rewrites the server URL of each ImmichFrame account carrying one of these keys to Immich's current bridge address. Every other field of those accounts, and every other account, belongs to the user.
+
+## Dependencies
+
+Immich is an optional dependency, declared only while **Connect Immich** has at least one account connected. It must be running, but no health check is required.
+
+ImmichFrame reaches it over the StartOS bridge with a key that **Connect Immich** mints through Immich's hidden Create API Key action. The key carries `album.read`, `album.statistics`, `asset.read`, `asset.statistics`, `asset.view`, `face.read`, `memory.read`, `person.read`, `person.statistics` and `tag.read`. Immich servers elsewhere are added by hand in the admin page and are not dependencies.
+
+## Network Access and Interfaces
+
+Two interfaces share ImmichFrame's one port.
+
+| Interface | Type | Port | Protocol | Purpose                                              |
+| --------- | ---- | ---- | -------- | ---------------------------------------------------- |
+| `ui`      | `ui` | 8080 | HTTP     | the slideshow at `/`                                 |
+| `admin`   | `ui` | 8080 | HTTP     | the admin page at `/admin`, which calls `/api/Admin` |
+
+While an access secret is required, every address of `ui` carries it as `?authsecret=…`, and that interface is masked. `admin` never carries it: the admin page signs in with the admin password. ImmichFrame's web client stores the secret in the browser's local storage and sends it as a `Bearer` token on every API call. Without it, the asset endpoints answer 401, and the page asks for the secret. `/api/Config` (display settings) answers without it, as upstream.
+
+## Installation and First-Run Flow
+
+Install generates the access secret, so the slideshow is locked from the start. ImmichFrame cannot start until **Set Admin Password** has run (see [Tasks](#tasks)). Because the password always arrives through the environment, ImmichFrame's anonymous first-run screen at `/admin`, where whoever arrives first chooses the admin password, never appears.
+
+ImmichFrame starts with no Immich account and shows a hint saying so. Accounts come from **Connect Immich** or the admin page.
+
+## Actions
+
+Every action that changes `store.json` restarts ImmichFrame, which takes a few seconds.
+
+- **Set Admin Password** — run on install (its task asks for it), or to change a lost or leaked password. Generates a random password and returns it once, masked. ImmichFrame restarts and the old password stops working at once. Repeatable; each run replaces the password.
+- **Configure Access Secret** — a toggle for whether the slideshow requires the access secret. Off, anyone who can reach the interface sees the photos. The secret stays stored while it is off, so turning it back on restores the same one, and frames that already have it keep working. Turning it on returns the secret, masked, for a frame that asks for it. Repeatable.
+- **Reset Access Secret** — shown while the secret is required. Replaces it, for a lost frame or a leaked address. Every frame then has to open a **Slideshow** address once more, or be given the new secret.
+- **Set Time Zone** — run when calendar events show at the wrong hour. Sets `TZ`, then restarts.
+- **Connect Immich** — available while Immich on this server is installed at a version that has the dependent key actions; otherwise disabled with the reason. Both services must be running. It mints a key named "ImmichFrame" for the chosen Immich account. ImmichFrame checks that it can reach Immich, then adds an account carrying that key, which shows the whole library. Running it again for an already connected account swaps in a new key, keeps that account's filters, and deletes the old key. If adding the account fails, the key is deleted again. Takes seconds, then ImmichFrame restarts.
+- **Disconnect Immich** — shown while an account is connected. Deletes the key in Immich, removes the account carrying it from ImmichFrame, restarts it, and drops the Immich dependency when no account is left. Immich has to be running, unless it is uninstalled, which already took its keys.
+
+## Tasks
+
+The package raises one task.
+
+- **Set Admin Password** — `critical`, raised while `store.json` has no admin password, which is the case after install. It blocks ImmichFrame from starting, and clears as soon as the action runs. It can't come back, since nothing clears the password.
+
+## Health Checks
+
+One check.
+
+- **Web Interface** (`immichframe`) — ImmichFrame is listening on port 8080. It passes within seconds of start. If it fails, read the service log: ImmichFrame exits at startup when `/app/Config` is not writable (`Cannot open the settings database`), which the `chown` step prevents.
+
+An unreachable or too-old Immich server does not fail it. ImmichFrame logs that as critical and keeps running, and the slideshow then shows no photos.
+
+## Backups and Restore
+
+The `startos` and `config` volumes are copied whole, while ImmichFrame is stopped, so the settings database is captured at rest. `cache` is excluded: it holds only copies of photos that ImmichFrame downloads again from Immich.
+
+A restored ImmichFrame keeps its admin password, access secret, accounts and keys, so frames keep working without being set up again. A connected account's key works only against the Immich it was minted in. If Immich is restored from an older backup or reinstalled, run **Connect Immich** again for that account.
+
+## Limitations and Differences
+
+1. The admin password and the access secret are owned by StartOS actions. Their fields in ImmichFrame's admin page are overridden: the admin password always, and the access secret at the next start.
+2. Over the LAN, frames open an `https` address signed by the server's root CA, until the LAN gateway is marked secure (`start-cli net gateway set-secure`), which also offers the interface's plain `http` address there. A device that cannot trust the root CA, like a Frameo frame, needs that plain address or a public domain with a publicly trusted certificate. Over plain `http`, the access secret and the admin password cross the network unencrypted.
+3. Custom CSS (upstream's `custom.css` bind mount) is not supported.
+4. `LOG_LEVEL` is fixed at `Warning`; at upstream's default, ImmichFrame logs every SQL statement.
+
+---
+
+## Quick Reference for AI Consumers
+
+```yaml
+package_id: immichframe
+image: ghcr.io/immichframe/immichframe
+architectures: [x86_64, aarch64]
+subcontainers: [immichframe-sub]
+volumes:
+  config: /app/Config
+  cache: /app/ImageCache
+  startos: null
+file_models:
+  - store.json
+startos_managed_env_vars:
+  - IMMICHFRAME_ADMIN_PASSWORD
+  - TZ
+  - LOG_LEVEL
+dependencies: [immich]
+interfaces:
+  ui: { type: ui, port: 8080 }
+  admin: { type: ui, port: 8080 }
+actions:
+  - set-admin-password
+  - configure-access-secret
+  - reset-access-secret
+  - set-time-zone
+  - connect-immich
+  - disconnect-immich
+tasks:
+  - { action: set-admin-password, severity: critical }
+health_checks:
+  - immichframe
+```
