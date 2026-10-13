@@ -14,7 +14,7 @@ const dict = {
   'Connect Immich': 10,
   'Add an Immich account on this server to the slideshow, using a new Immich API key that can only view that account’s library. Connecting an account again replaces its key and keeps its slideshow settings.': 11,
   Immich: 12,
-  'Requires Immich 3.3.1:1 or later': 13,
+  'Requires Immich 3.3.1:2 or later': 13,
   'Start Immich first': 14,
   'No admin password is set': 15,
   'Immich has no address ImmichFrame can reach': 16,

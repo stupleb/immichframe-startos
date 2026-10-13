@@ -55,7 +55,7 @@ export const connectImmich = sdk.Action.withInput(
         ? 'hidden'
         : immichSupported(version)
           ? 'enabled'
-          : { disabled: i18n('Requires Immich 3.3.1:1 or later') },
+          : { disabled: i18n('Requires Immich 3.3.1:2 or later') },
     }
   },
 

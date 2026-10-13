@@ -14,7 +14,7 @@ export const configPath = '/app/Config'
 export const cachePath = '/app/ImageCache'
 
 export const IMMICH_ID = 'immich'
-export const immichVersionRange = '>=3.3.1:1'
+export const immichVersionRange = '>=3.3.1:2'
 // What ImmichFrame's docs list under API Key Permissions.
 const immichKeyPermissions = [
   'album.read',
