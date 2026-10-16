@@ -15,7 +15,7 @@ export const dependencies = sdk.Dependencies.of().addDependency(
     healthChecks: [],
     enabled: async ({ effects }) =>
       !!(await storeJson
-        .read((s) => s.immichConnections.length > 0)
+        .read((s) => s.immichConnections.length > 0 || !!s.immichRequest)
         .const(effects)),
   }),
 )

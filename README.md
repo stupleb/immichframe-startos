@@ -9,7 +9,7 @@
 > upstream documentation is accurate and fully applicable — see the
 > Documentation section of `instructions.md` for links.
 
-[ImmichFrame](https://github.com/immichFrame/ImmichFrame) turns a browser, tablet, TV or photo frame into a slideshow of photos from one or more Immich servers. This package runs it with a StartOS-owned admin password and access secret, and can connect it to Immich on the same server with a key it mints there.
+[ImmichFrame](https://github.com/immichFrame/ImmichFrame) turns a browser, tablet, TV or photo frame into a slideshow of photos from one or more Immich servers. This package runs it with a StartOS-owned admin password and access secret, and can connect it to Immich on the same server with a read-only key that the user approves in Immich.
 
 ---
 
@@ -59,13 +59,14 @@ The package writes no ImmichFrame configuration file; ImmichFrame's settings dat
 - `adminPassword` — written by **Set Admin Password**. It reaches ImmichFrame as `IMMICHFRAME_ADMIN_PASSWORD`, which ImmichFrame reads on every start and which overrides the **AdminPassword** setting in its admin page, so that setting has no effect.
 - `frameSecret` and `requireSecret` — the access secret, generated at install, and whether the slideshow requires it. **Configure Access Secret** sets `requireSecret` and leaves the secret stored while it is off; **Reset Access Secret** replaces the secret. On every start `apply-settings` writes the secret to ImmichFrame's **AuthenticationSecret** setting while it is required, and clears that setting while it is not, so a value typed into the admin page lasts only until the next start.
 - `timeZone` — written by **Set Time Zone**, `UTC` until then. It reaches ImmichFrame as `TZ`. ImmichFrame uses it for calendar events; each frame's clock runs in the browser's own time zone.
-- `immichConnections` — one entry per account added by **Connect Immich**: the Immich user, its email, and the key's id and secret. On every start `apply-settings` rewrites the server URL of each ImmichFrame account carrying one of these keys to Immich's current bridge address. Every other field of those accounts, and every other account, belongs to the user.
+- `immichConnections` — one entry per account added by **Connect Immich**: the Immich user, its email, and the key's secret. On every start `apply-settings` rewrites the server URL of each ImmichFrame account carrying one of these keys to Immich's current bridge address. Every other field of those accounts, and every other account, belongs to the user.
+- `immichRequest` — the **Connect Immich** request that Immich has not accepted yet, or `null`: its key, and the optional label it was sent with.
 
 ## Dependencies
 
-Immich is an optional dependency, declared only while **Connect Immich** has at least one account connected. It must be running, but no health check is required.
+Immich is an optional dependency, declared only while **Connect Immich** has an account connected or a request waiting. It must be running, but no health check is required.
 
-ImmichFrame reaches it over the StartOS bridge with a key that **Connect Immich** mints through Immich's hidden Create API Key action. The key carries `album.read`, `album.statistics`, `asset.read`, `asset.statistics`, `asset.view`, `face.read`, `memory.read`, `person.read`, `person.statistics` and `tag.read`. Immich servers elsewhere are added by hand in the admin page and are not dependencies.
+ImmichFrame reaches it over the StartOS bridge with a key it generates itself. **Connect Immich** sends Immich only the key's SHA-256, through Immich's hidden `request-access` action, and the user approves the request in Immich's tasks, choosing the account there. Immich then stores the key under that account as `StartOS: immichframe`. The key carries `album.read`, `album.statistics`, `asset.read`, `asset.statistics`, `asset.view`, `face.read`, `memory.read`, `person.read`, `person.statistics`, `tag.read` and `user.read`; the last lets ImmichFrame read which account was chosen from `GET /api/users/me`. **Disconnect Immich**, and uninstalling ImmichFrame, delete keys through Immich's `revoke-access` action. Immich servers elsewhere are added by hand in the admin page and are not dependencies.
 
 ## Network Access and Interfaces
 
@@ -86,14 +87,14 @@ ImmichFrame starts with no Immich account and shows a hint saying so. Accounts c
 
 ## Actions
 
-Every action that changes `store.json` restarts ImmichFrame, which takes a few seconds.
+Set Admin Password, Configure Access Secret, Reset Access Secret and Set Time Zone restart ImmichFrame, which takes a few seconds. Connect and Disconnect Immich don't.
 
 - **Set Admin Password** — run on install (its task asks for it), or to change a lost or leaked password. Generates a random password and returns it once, masked. ImmichFrame restarts and the old password stops working at once. Repeatable; each run replaces the password.
 - **Configure Access Secret** — a toggle for whether the slideshow requires the access secret. Off, anyone who can reach the interface sees the photos. The secret stays stored while it is off, so turning it back on restores the same one, and frames that already have it keep working. Turning it on returns the secret, masked, for a frame that asks for it. Repeatable.
 - **Reset Access Secret** — shown while the secret is required. Replaces it, for a lost frame or a leaked address. Every frame then has to open a **Slideshow** address once more, or be given the new secret.
 - **Set Time Zone** — run when calendar events show at the wrong hour. Sets `TZ`, then restarts.
-- **Connect Immich** — available while Immich on this server is installed at a version that has the dependent key actions; otherwise disabled with the reason. Both services must be running. It mints a key named "ImmichFrame" for the chosen Immich account. ImmichFrame checks that it can reach Immich, then adds an account carrying that key, which shows the whole library. Running it again for an already connected account swaps in a new key, keeps that account's filters, and deletes the old key. If adding the account fails, the key is deleted again. Takes seconds, then ImmichFrame restarts.
-- **Disconnect Immich** — shown while an account is connected. Deletes the key in Immich, removes the account carrying it from ImmichFrame, restarts it, and drops the Immich dependency when no account is left. Immich has to be running, unless it is uninstalled, which already took its keys.
+- **Connect Immich** — available while Immich on this server is installed at 3.3.3:1 or later; otherwise disabled with the reason. Both services must be running. It takes an optional **Who is it for?** label, sent to Immich only when Immich's form has a label field, and shown with the request. It generates a key, stores it with the label as `immichRequest`, and asks Immich for access with it. Immich raises a task in which the user approves the request and chooses the account, or denies it; the **Immich Access** health check reports `loading` meanwhile. Once Immich accepts the key, ImmichFrame adds an account carrying it, which shows the whole library. Approving an account that is already connected makes Immich delete that account's old key, and ImmichFrame swaps the new key into the same account, keeping its filters. Run it once per person. Running it again while a request waits withdraws that request first; if Immich has approved it in the meantime, it fails and asks to be run again in a few seconds, once that account is added.
+- **Disconnect Immich** — shown while an account is connected or a request waits. For an account, it deletes the key in Immich, removes the account carrying it from ImmichFrame, and drops the Immich dependency when nothing is left. For a waiting request, it withdraws the request and clears Immich's task. Immich has to be running, unless it is uninstalled, which already took its keys.
 
 ## Tasks
 
@@ -101,11 +102,14 @@ The package raises one task.
 
 - **Set Admin Password** — `critical`, raised while `store.json` has no admin password, which is the case after install. It blocks ImmichFrame from starting, and clears as soon as the action runs. It can't come back, since nothing clears the password.
 
+The task that approves a **Connect Immich** request is Immich's, raised on Immich's page, one per request.
+
 ## Health Checks
 
-One check.
+Two checks.
 
 - **Web Interface** (`immichframe`) — ImmichFrame is listening on port 8080. It passes within seconds of start. If it fails, read the service log: ImmichFrame exits at startup when `/app/Config` is not writable (`Cannot open the settings database`), which the `chown` step prevents.
+- **Immich Access** (`immich-access`) — present while Immich is installed, every 15 seconds; `disabled` while no account is connected and no request waits. While a request waits, it tries the pending key on Immich's `GET /api/users/me`. While Immich answers 401 it reports `loading`, asking for approval in Immich's tasks, and, since Immich answers a pending and a denied request alike, for **Disconnect Immich** to stop asking or **Connect Immich** to ask again. Once Immich accepts the key, it adds the account, and revokes the key of an account the approval replaced. With no request waiting, it tries every connected account's key, and fails, naming the accounts, when Immich refuses one: the key was deleted in Immich, the Immich account was deleted, or Immich was reinstalled or restored from an older backup. It also reports `loading` while Immich is stopped or not answering, and fails when Immich answers anything else.
 
 An unreachable or too-old Immich server does not fail it. ImmichFrame logs that as critical and keeps running, and the slideshow then shows no photos.
 
@@ -113,7 +117,7 @@ An unreachable or too-old Immich server does not fail it. ImmichFrame logs that 
 
 The `startos` and `config` volumes are copied whole, while ImmichFrame is stopped, so the settings database is captured at rest. `cache` is excluded: it holds only copies of photos that ImmichFrame downloads again from Immich.
 
-A restored ImmichFrame keeps its admin password, access secret, accounts and keys, so frames keep working without being set up again. A connected account's key works only against the Immich it was minted in. If Immich is restored from an older backup or reinstalled, run **Connect Immich** again for that account.
+A restored ImmichFrame keeps its admin password, access secret, accounts and keys, so frames keep working without being set up again. A connected account's key works only while Immich still holds it. Uninstalling ImmichFrame revokes its keys, and a reinstalled Immich, or one restored from a backup taken before the approval, has none of them. In those cases, disconnect each affected account and run **Connect Immich** again.
 
 ## Limitations and Differences
 
@@ -156,4 +160,5 @@ tasks:
   - { action: set-admin-password, severity: critical }
 health_checks:
   - immichframe
+  - immich-access
 ```

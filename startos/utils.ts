@@ -1,4 +1,5 @@
 import { ExtendedVersion, T, utils, VersionRange } from '@start9labs/start-sdk'
+import { createHash, randomBytes } from 'crypto'
 import {
   uiHostId as immichHostId,
   uiPort as immichPort,
@@ -14,8 +15,9 @@ export const configPath = '/app/Config'
 export const cachePath = '/app/ImageCache'
 
 export const IMMICH_ID = 'immich'
-export const immichVersionRange = '>=3.3.1:2'
-// What ImmichFrame's docs list under API Key Permissions.
+export const immichMinVersion = '3.3.3:1'
+export const immichVersionRange = `>=${immichMinVersion}`
+// What ImmichFrame's docs list under API Key Permissions, plus user.read to learn which account Immich chose.
 const immichKeyPermissions = [
   'album.read',
   'album.statistics',
@@ -27,6 +29,7 @@ const immichKeyPermissions = [
   'person.read',
   'person.statistics',
   'tag.read',
+  'user.read',
 ]
 
 export const getRandomString = (len: number) =>
@@ -72,16 +75,6 @@ export const writeSettings = (adminPassword: string, settings: FrameSettings) =>
     method: 'PUT',
     body: settings,
   })
-
-export const testAccount = (
-  adminPassword: string,
-  account: { immichServerUrl: string; apiKey: string },
-) =>
-  adminApi<{ success: boolean; message: string }>(
-    adminPassword,
-    'Settings/TestAccount',
-    { method: 'POST', body: account },
-  )
 
 export function immichVersion(effects: T.Effects) {
   return sdk.getServiceManifest(effects, IMMICH_ID, (m) => m?.version ?? null)
@@ -135,58 +128,58 @@ export async function withImmichDependency<R>(
   }
 }
 
-export async function listImmichUsers(
-  effects: T.Effects,
-): Promise<{ id: string; email: string }[]> {
-  // sdk.action.run sends no `input` for an action without one, which StartOS rejects.
-  const res = await effects.action.run({
-    packageId: IMMICH_ID,
-    actionId: 'list-users',
-    input: {},
-  })
-  return res?.version === '1' && res.result?.type === 'group'
-    ? res.result.value.flatMap((m) =>
-        m.type === 'single' ? [{ id: m.value, email: m.name }] : [],
-      )
-    : []
-}
+export const immichRunning = async (effects: T.Effects) =>
+  !!(await sdk.getStatus(effects, { packageId: IMMICH_ID }).once())?.started
 
-export async function createImmichKey(
-  effects: T.Effects,
-  userId: string,
-): Promise<{ secret: string; id: string }> {
-  const res = await sdk.action.run({
-    effects,
-    packageId: IMMICH_ID,
-    actionId: 'create-api-key',
-    input: () => ({
-      userId,
-      name: 'ImmichFrame',
-      permissions: immichKeyPermissions,
-    }),
-  })
-  const fields: Record<string, string> = Object.fromEntries(
-    res?.version === '1' && res.result?.type === 'group'
-      ? res.result.value.flatMap((m) =>
-          m.type === 'single' ? [[m.name, m.value]] : [],
-        )
-      : [],
-  )
-  if (!fields.secret || !fields.id)
-    throw new Error(i18n('Immich did not return an API key'))
-  return { secret: fields.secret, id: fields.id }
-}
+export const newImmichKey = () => randomBytes(32).toString('base64url')
 
-// Succeeds when the key is already gone.
-export async function deleteImmichKey(
+const immichKeyHash = (apiKey: string) =>
+  createHash('sha256').update(apiKey).digest('hex')
+
+// Only Immich releases whose form has a label take one.
+export async function requestImmichAccess(
   effects: T.Effects,
-  userId: string,
-  keyId: string,
+  request: { apiKey: string; label: string | null },
 ) {
   await sdk.action.run({
     effects,
     packageId: IMMICH_ID,
-    actionId: 'delete-api-key',
-    input: () => ({ userId, keyId }),
+    actionId: 'request-access',
+    input: ({ spec }) => ({
+      keyHash: immichKeyHash(request.apiKey),
+      permissions: immichKeyPermissions,
+      ...('label' in spec && request.label ? { label: request.label } : {}),
+    }),
   })
+}
+
+// With no key, Immich revokes every key and request ImmichFrame holds.
+export async function revokeImmichAccess(
+  effects: T.Effects,
+  apiKey: string | null,
+) {
+  await sdk.action.run({
+    effects,
+    packageId: IMMICH_ID,
+    actionId: 'revoke-access',
+    input: () => ({ keyHash: apiKey === null ? null : immichKeyHash(apiKey) }),
+  })
+}
+
+// Immich answers 401 both while the request is pending and after a denial.
+export async function immichKeyOwner(
+  address: string,
+  apiKey: string,
+): Promise<{ id: string; email: string } | 'unapproved' | 'no-answer'> {
+  const res = await fetch(`${immichUrl(address)}/api/users/me`, {
+    headers: { 'x-api-key': apiKey },
+    signal: AbortSignal.timeout(10_000),
+  }).catch(() => null)
+  if (!res) return 'no-answer'
+  if (res.status === 401) return 'unapproved'
+  if (!res.ok)
+    throw new Error(
+      i18n('Immich answered ${status}', { status: String(res.status) }),
+    )
+  return res.json()
 }
