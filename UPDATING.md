@@ -25,17 +25,19 @@ Ignore `latest`. Both `linux/amd64` and `linux/arm64` must be listed.
    - `ImmichFrame.WebApi/Services/AdminAuthService.cs` still reads
      `IMMICHFRAME_ADMIN_PASSWORD` and lets it win over the stored password.
    - `ImmichFrame.WebApi/Controllers/AdminController.cs` still serves
-     `GET`/`PUT /api/Admin/Settings` and `POST /api/Admin/Settings/TestAccount`
-     behind `Bearer <admin password>`, and `ServerSettings.cs` still names
-     `General.authenticationSecret`, `Accounts[].immichServerUrl` and
-     `Accounts[].apiKey`. `startos/utils.ts` and `startos/main.ts` write those.
+     `GET`/`PUT /api/Admin/Settings` behind `Bearer <admin password>`, and
+     `ServerSettings.cs` still names `General.authenticationSecret`,
+     `Accounts[].immichServerUrl` and `Accounts[].apiKey`. `startos/utils.ts`
+     and `startos/main.ts` write those.
    - The Dockerfile still runs as uid 1000 with the settings database in
      `/app/Config`, and `PooledImmichFrameLogic.cs` still downloads to
      `ImageCache` beside the executable.
    - The **API Key Permissions** list in `docs/docs/getting-started/configuration.md`
-     still matches `immichKeyPermissions` in `startos/utils.ts`. A new permission
-     also has to be added to `dependentKeyPermissions` in immich-startos before
-     **Connect Immich** can request it.
-3. If the minimum Immich version moved past what `immichVersionRange` in
-   `startos/utils.ts` admits, raise it.
-4. Install the build, run **Connect Immich**, and confirm the slideshow serves photos.
+     still matches `immichKeyPermissions` in `startos/utils.ts`, which adds
+     `user.read`. A new permission also has to be added to
+     `dependentKeyPermissions` in immich-startos before **Connect Immich** can
+     request it.
+3. If the minimum Immich version moved past `immichMinVersion` in
+   `startos/utils.ts`, raise it.
+4. Install the build, run **Connect Immich**, approve the request in Immich's
+   tasks, and confirm the slideshow serves photos.

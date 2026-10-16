@@ -18,7 +18,7 @@ Your photos are private by default. Every **Slideshow** address carries an acces
 
 1. Run **Set Admin Password** and copy the password it shows.
 2. Give ImmichFrame some photos:
-   - If Immich runs on this server, run **Connect Immich** and choose whose photos to show. The slideshow then shows that person's whole library.
+   - If Immich runs on this server, run **Connect Immich**, saying who it's for if you like. Then open Immich's tasks, approve ImmichFrame's request, and choose whose photos to show. The slideshow then shows that person's whole library. Repeat for each person.
    - For an Immich server elsewhere, create an API key in Immich under **Account Settings → API Keys**, with the permissions the configuration reference lists. Then open the **Admin** interface, sign in, and add an account with that server's address and the key.
 3. Open a **Slideshow** address on each frame, in its browser or in the ImmichFrame app. The frame remembers the access secret from the address, so you only do this once per frame.
 4. If you add calendars to the slideshow, run **Set Time Zone**.
@@ -53,5 +53,5 @@ A photo shows when it matches any of these. **Excluded albums**, the date fields
 - **Configure Access Secret** — make the slideshow private or public. Turning the secret back on restores the same one, so frames that already had it keep working.
 - **Reset Access Secret** — replace the secret, for example after losing a frame. Open a **Slideshow** address once more on each frame afterwards.
 - **Set Time Zone** — the time zone calendar events are shown in. The clock on each frame uses that frame's own time zone.
-- **Connect Immich** — add an Immich account from this server. ImmichFrame gets its own Immich API key, named "ImmichFrame", that can view that account's library and nothing else. Running it again for the same account replaces the key and keeps the account's settings.
-- **Disconnect Immich** — remove that account from the slideshow and delete its key from Immich.
+- **Connect Immich** — ask Immich on this server for one person's photos. You approve the request in Immich's tasks and choose the account there, and ImmichFrame then adds it to the slideshow with its own read-only key, which Immich lists as "StartOS: immichframe". Choosing an account that's already connected replaces its key and keeps the account's settings. If you denied the request, run it again.
+- **Disconnect Immich** — remove an account from the slideshow and delete its key from Immich, or withdraw a request you haven't approved.

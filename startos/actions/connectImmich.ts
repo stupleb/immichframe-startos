@@ -2,40 +2,33 @@ import { storeJson } from '../fileModels/store.json'
 import { i18n } from '../i18n'
 import { sdk } from '../sdk'
 import {
-  createImmichKey,
-  deleteImmichKey,
-  IMMICH_ID,
   immichBridgeAddress,
+  immichKeyOwner,
+  immichMinVersion,
+  immichRunning,
   immichSupported,
-  immichUrl,
   immichVersion,
-  listImmichUsers,
-  readSettings,
-  testAccount,
+  newImmichKey,
+  requestImmichAccess,
+  revokeImmichAccess,
   withImmichDependency,
-  writeSettings,
 } from '../utils'
 
 const { InputSpec, Value } = sdk
 
-const immichRunning = async (effects: Parameters<typeof immichVersion>[0]) =>
-  !!(await sdk.getStatus(effects, { packageId: IMMICH_ID }).once())?.started
-
 const inputSpec = InputSpec.of({
-  userId: Value.dynamicSelect(async ({ effects }) => ({
-    name: i18n('Immich account'),
-    description: i18n('Whose photos the slideshow shows.'),
-    values: Object.fromEntries(
-      (await immichRunning(effects))
-        ? (
-            await withImmichDependency(effects, false, () =>
-              listImmichUsers(effects),
-            )
-          ).map((u) => [u.id, u.email])
-        : [],
+  label: Value.text({
+    name: i18n('Who is it for?'),
+    description: i18n(
+      'Shown with the request in Immich, so you choose the right account there.',
     ),
+    required: false,
     default: null,
-  })),
+    maxLength: 64,
+    patterns: [
+      { regex: '^[^<>]*$', description: i18n('Cannot contain < or >') },
+    ],
+  }),
 })
 
 export const connectImmich = sdk.Action.withInput(
@@ -46,7 +39,7 @@ export const connectImmich = sdk.Action.withInput(
     return {
       name: i18n('Connect Immich'),
       description: i18n(
-        'Add an Immich account on this server to the slideshow, using a new Immich API key that can only view that account’s library. Connecting an account again replaces its key and keeps its slideshow settings.',
+        'Ask Immich on this server to let the slideshow show one person’s photos. You approve the request in Immich’s tasks and choose the account there. Run it once for each person. Choosing an account that is already connected replaces its key and keeps its slideshow settings.',
       ),
       warning: null,
       allowedStatuses: 'only-running',
@@ -55,7 +48,11 @@ export const connectImmich = sdk.Action.withInput(
         ? 'hidden'
         : immichSupported(version)
           ? 'enabled'
-          : { disabled: i18n('Requires Immich 3.3.1:2 or later') },
+          : {
+              disabled: i18n('Requires Immich ${version} or later', {
+                version: immichMinVersion,
+              }),
+            },
     }
   },
 
@@ -66,77 +63,43 @@ export const connectImmich = sdk.Action.withInput(
   async ({ effects, input }) => {
     if (!(await immichRunning(effects)))
       throw new Error(i18n('Start Immich first'))
-    const store = await storeJson.read().once()
-    if (!store?.adminPassword) throw new Error(i18n('No admin password is set'))
-    const { adminPassword, immichConnections } = store
-    const address = await immichBridgeAddress(effects).once()
-    if (!address)
-      throw new Error(i18n('Immich has no address ImmichFrame can reach'))
+    const previous = await storeJson.read((s) => s.immichRequest?.apiKey).once()
+    const request = {
+      apiKey: newImmichKey(),
+      label: input.label?.trim() || null,
+    }
 
-    const email = await withImmichDependency(effects, true, async () => {
-      const user = (await listImmichUsers(effects)).find(
-        (u) => u.id === input.userId,
-      )
-      if (!user) throw new Error(i18n('That Immich account no longer exists'))
-      const key = await createImmichKey(effects, user.id)
-      const discardKey = () =>
-        deleteImmichKey(effects, user.id, key.id).catch((e) =>
-          console.error(`Could not delete the unused Immich key: ${e}`),
-        )
-      const replaced = immichConnections.find((c) => c.immichUserId === user.id)
-      try {
-        const test = await testAccount(adminPassword, {
-          immichServerUrl: immichUrl(address),
-          apiKey: key.secret,
-        })
-        if (!test.success)
+    await withImmichDependency(effects, true, async () => {
+      if (previous) {
+        const address = await immichBridgeAddress(effects).once()
+        if (!address)
+          throw new Error(i18n('Immich has no address ImmichFrame can reach'))
+        const owner = await immichKeyOwner(address, previous)
+        if (owner === 'no-answer')
+          throw new Error(i18n('Immich is not answering'))
+        if (owner !== 'unapproved')
           throw new Error(
-            i18n('ImmichFrame could not reach Immich: ${detail}', {
-              detail: test.message,
-            }),
+            i18n(
+              'Immich has approved the previous request, and ImmichFrame is adding that account. Run Connect Immich again in a few seconds to add someone else.',
+            ),
           )
-        const settings = await readSettings(adminPassword)
-        const existing = settings.Accounts.find(
-          (a) => replaced && a.apiKey === replaced.apiKey,
-        )
-        if (existing) {
-          existing.immichServerUrl = immichUrl(address)
-          existing.apiKey = key.secret
-        } else {
-          settings.Accounts.push({
-            immichServerUrl: immichUrl(address),
-            apiKey: key.secret,
-          })
-        }
-        await writeSettings(adminPassword, settings)
+        await revokeImmichAccess(effects, previous)
+      }
+      // Recorded first, so Immich never holds a request whose key ImmichFrame lost.
+      await storeJson.merge(effects, { immichRequest: request })
+      try {
+        await requestImmichAccess(effects, request)
       } catch (e) {
-        await discardKey()
+        await storeJson.merge(effects, { immichRequest: null })
         throw e
       }
-      await storeJson.merge(effects, {
-        immichConnections: [
-          ...immichConnections.filter((c) => c !== replaced),
-          {
-            immichUserId: user.id,
-            email: user.email,
-            keyId: key.id,
-            apiKey: key.secret,
-          },
-        ],
-      })
-      if (replaced)
-        await deleteImmichKey(effects, user.id, replaced.keyId).catch((e) =>
-          console.error(`Could not delete the replaced Immich key: ${e}`),
-        )
-      return user.email
     })
 
     return {
       version: '1',
-      title: i18n('Immich Connected'),
+      title: i18n('Approve in Immich'),
       message: i18n(
-        'The slideshow now includes ${email}’s whole library. To narrow it to albums, people or tags, edit the account on the ImmichFrame admin page. Immich lists the key as “ImmichFrame” among that account’s API keys.',
-        { email },
+        'Open Immich’s tasks, approve ImmichFrame’s request and choose whose photos to show. ImmichFrame then adds that account to the slideshow, with its whole library. To add someone else, run Connect Immich again once this one is connected.',
       ),
       result: null,
     }

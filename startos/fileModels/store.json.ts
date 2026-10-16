@@ -11,11 +11,14 @@ const shape = z.object({
       z.object({
         immichUserId: z.string(),
         email: z.string(),
-        keyId: z.string(),
         apiKey: z.string(),
       }),
     )
     .catch([]),
+  immichRequest: z
+    .object({ apiKey: z.string(), label: z.string().nullable() })
+    .nullable()
+    .catch(null),
 })
 
 export const storeJson = FileHelper.json(
