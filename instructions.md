@@ -27,7 +27,7 @@ Your photos are private by default. Every **Slideshow** address carries an acces
 
 ### Frames
 
-Use an `https` address of the **Slideshow** interface. The frame has to trust your server's root certificate authority, just as a computer does before it opens your server's `.local` addresses. A device that can't install one, like a Frameo frame, can use a plain `http` address instead once your home network's gateway is marked secure in StartOS (see [Secure Gateways](https://docs.start9.com/start-os/gateways.html#secure-gateways)). That switch covers every service on your server, and anything on your network can then read what those addresses carry, the access secret included. A public domain with a trusted certificate works too.
+Use an `https` address of the **Slideshow** interface. A browser has to trust your server's root certificate authority, just as a computer does before it opens your server's `.local` addresses. The ImmichFrame Android app, Frameo frames included, never trusts a certificate authority you install, so give it a public domain with a trusted certificate, or a plain `http` address once your home network's gateway is marked secure in StartOS (see [Secure Gateways](https://docs.start9.com/start-os/gateways.html#secure-gateways)). That switch covers every service on your server, and anything on your network can then read what those addresses carry, the access secret included. A domain added to **Slideshow** also opens the **Admin** page, at `/admin`, behind the admin password.
 
 ### The admin page
 
@@ -46,6 +46,8 @@ An account shows its whole library until you narrow it, including one added by *
 3. Select **Save**.
 
 A photo shows when it matches any of these. **Excluded albums**, the date fields and **Minimum rating** then narrow that set, and ticking **Archived** or **Videos** adds archived photos or videos. **Memories** adds the day's Immich memories; on its own, it shows only those. To show a hand-picked set, put the photos in an Immich album and use its ID.
+
+A shared album shows only the photos of the account it's set on, not those other people added. To show everyone's, run **Connect Immich** for each person, approve it with their account, and give each account the same album ID.
 
 ### Actions
 

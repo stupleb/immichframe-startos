@@ -122,9 +122,11 @@ A restored ImmichFrame keeps its admin password, access secret, accounts and key
 ## Limitations and Differences
 
 1. The admin password and the access secret are owned by StartOS actions. Their fields in ImmichFrame's admin page are overridden: the admin password always, and the access secret at the next start.
-2. Over the LAN, frames open an `https` address signed by the server's root CA, until the LAN gateway is marked secure (`start-cli net gateway set-secure`), which also offers the interface's plain `http` address there. A device that cannot trust the root CA, like a Frameo frame, needs that plain address or a public domain with a publicly trusted certificate. Over plain `http`, the access secret and the admin password cross the network unencrypted.
-3. Custom CSS (upstream's `custom.css` bind mount) is not supported.
-4. `LOG_LEVEL` is fixed at `Warning`; at upstream's default, ImmichFrame logs every SQL statement.
+2. Over the LAN, frames open an `https` address signed by the server's root CA, until the LAN gateway is marked secure (`start-cli net gateway set-secure`), which also offers the interface's plain `http` address there. The ImmichFrame Android app (Frameo frames included) declares no network security config, so it trusts only system CAs and never a user-installed root CA; it needs that plain address or a public domain with a publicly trusted certificate. Over plain `http`, the access secret and the admin password cross the network unencrypted.
+3. **Slideshow** and **Admin** share one host, so a domain added to either serves both: `/admin` is reachable on a public Slideshow domain, behind the admin password.
+4. ImmichFrame selects photos through Immich's search, which returns only the key owner's assets (and partners' shown in their timeline). A shared album therefore shows only the connected account's own photos in it; connecting each member's account with the same album ID shows all of them.
+5. Custom CSS (upstream's `custom.css` bind mount) is not supported.
+6. `LOG_LEVEL` is fixed at `Warning`; at upstream's default, ImmichFrame logs every SQL statement.
 
 ---
 
