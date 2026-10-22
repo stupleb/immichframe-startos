@@ -32,7 +32,7 @@
 
 ## Image and Container Runtime
 
-The package runs upstream's published image unmodified, for x86_64 and aarch64, with its own entrypoint (`dotnet ImmichFrame.WebApi.dll`) as uid 1000.
+The package runs upstream's published image, for x86_64 and aarch64, with its own entrypoint (`dotnet ImmichFrame.WebApi.dll`) as uid 1000. The root `Dockerfile` upgrades the image's `ca-certificates` package, so its trust store drops the compromised eMudhra certificate authority (emSign ECC Root CA - G3), and fails the build if that root remains. It's a temporary layer that comes out once upstream ships an image built on a fixed store.
 
 One subcontainer, `immichframe-sub`, runs three steps in order:
 
@@ -134,7 +134,7 @@ A restored ImmichFrame keeps its admin password, access secret, accounts and key
 
 ```yaml
 package_id: immichframe
-image: ghcr.io/immichframe/immichframe
+image: ghcr.io/immichframe/immichframe # CA store upgraded by Dockerfile
 architectures: [x86_64, aarch64]
 subcontainers: [immichframe-sub]
 volumes:
