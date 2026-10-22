@@ -13,7 +13,11 @@ export const manifest = setupManifest({
   volumes: ['startos', 'config', 'cache'],
   images: {
     immichframe: {
-      source: { dockerTag: 'ghcr.io/immichframe/immichframe:v1.0.39.0' },
+      source: {
+        dockerBuild: {
+          buildArgs: { IMAGE: 'ghcr.io/immichframe/immichframe:v1.0.39.0' },
+        },
+      },
       arch: ['x86_64', 'aarch64'],
     },
   },
