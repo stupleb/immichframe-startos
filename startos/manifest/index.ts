@@ -15,7 +15,10 @@ export const manifest = setupManifest({
     immichframe: {
       source: {
         dockerBuild: {
-          buildArgs: { IMAGE: 'ghcr.io/immichframe/immichframe:v1.0.39.0' },
+          buildArgs: {
+            IMAGE:
+              'ghcr.io/immichframe/immichframe:v1.0.39.0@sha256:b4bd2ac6ec75c0117a24bd627dc0b449d485ac87ec3a410c73d5db05a4bbfcaf',
+          },
         },
       },
       arch: ['x86_64', 'aarch64'],

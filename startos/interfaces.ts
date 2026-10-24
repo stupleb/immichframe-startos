@@ -5,7 +5,7 @@ import { uiHostId, uiInterfaceId, uiPort } from './utils'
 
 export const setInterfaces = sdk.setupInterfaces(async ({ effects }) => {
   const frameSecret = await storeJson
-    .read((s) => (s.requireSecret && s.frameSecret) || null)
+    .read((s) => (s.access !== 'public' && s.frameSecret) || null)
     .const(effects)
   const uiMulti = sdk.MultiHost.of(effects, uiHostId)
   const uiMultiOrigin = await uiMulti.bindPort(uiPort, { protocol: 'http' })
