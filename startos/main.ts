@@ -22,13 +22,15 @@ export const main = sdk.setupMain(async ({ effects }) => {
       (s) =>
         s && {
           adminPassword: s.adminPassword,
-          frameSecret: (s.requireSecret && s.frameSecret) || null,
+          frameSecret: s.access === 'public' ? null : s.frameSecret,
           timeZone: s.timeZone,
         },
     )
     .const(effects)
-  // The critical Set Admin Password task keeps ImmichFrame stopped until there is one.
+  // The critical Set Admin Password and Manage Access tasks keep ImmichFrame stopped until both have run.
   if (!store?.adminPassword) throw new Error(i18n('No admin password is set'))
+  if (store.frameSecret === undefined)
+    throw new Error(i18n('Manage Access has not been run'))
   const { adminPassword, frameSecret, timeZone } = store
   const immichInstalled = !!(await immichVersion(effects).const())
   const immichAddress = immichInstalled

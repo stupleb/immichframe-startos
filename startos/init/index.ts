@@ -6,6 +6,7 @@ import { actions } from '../actions'
 import { restoreInit } from '../backups'
 import { revokeOnUninstall } from './revokeOnUninstall'
 import { seedFiles } from './seedFiles'
+import { taskAccess } from './taskAccess'
 import { watchAdminPassword } from './watchAdminPassword'
 
 export const init = sdk.setupInit(
@@ -15,6 +16,7 @@ export const init = sdk.setupInit(
   setInterfaces,
   actions,
   watchAdminPassword,
+  taskAccess,
   dependencies,
 )
 

@@ -1,7 +1,7 @@
 # Updating the upstream version
 
 Upstream is ImmichFrame's official image on GHCR, `ghcr.io/immichframe/immichframe`,
-pinned by tag as the `IMAGE` build arg in `startos/manifest/index.ts`; the root
+pinned by tag and digest as the `IMAGE` build arg in `startos/manifest/index.ts`; the root
 `Dockerfile` only upgrades its CA store. It is built from the
 [immichFrame/ImmichFrame](https://github.com/immichFrame/ImmichFrame) release of the
 same name, and the package version is that tag without its `v`, e.g. `1.0.39.0:0`.
@@ -19,8 +19,10 @@ Ignore `latest`. Both `linux/amd64` and `linux/arm64` must be listed.
 
 ## Applying the bump
 
-1. Set the `IMAGE` build arg of `images.immichframe.source.dockerBuild` and the version in
-   `startos/versions/current.ts`, then read the release notes, especially any
+1. Set the `IMAGE` build arg of `images.immichframe.source.dockerBuild` to
+   `ghcr.io/immichframe/immichframe:vX.Y.Z.W@sha256:<digest>`, with the index digest from
+   `docker buildx imagetools inspect ghcr.io/immichframe/immichframe:vX.Y.Z.W`, and the
+   version in `startos/versions/current.ts`, then read the release notes, especially any
    breaking change and the minimum Immich version.
 2. Check what the package relies on, in the new tag:
    - `ImmichFrame.WebApi/Services/AdminAuthService.cs` still reads

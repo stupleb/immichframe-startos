@@ -1,14 +1,15 @@
 import { FileHelper, z } from '@start9labs/start-sdk'
 import { sdk } from '../sdk'
 
-const shape = z.object({
+const shape = z.looseObject({
   adminPassword: z.string().nullable().catch(null),
-  frameSecret: z.string().catch(''),
-  requireSecret: z.boolean().catch(true),
+  // unset until the owner chooses in Manage Access
+  access: z.enum(['private', 'public']).optional().catch(undefined),
+  frameSecret: z.string().optional().catch(undefined),
   timeZone: z.string().catch('UTC'),
   immichConnections: z
     .array(
-      z.object({
+      z.looseObject({
         immichUserId: z.string(),
         email: z.string(),
         apiKey: z.string(),
@@ -16,7 +17,7 @@ const shape = z.object({
     )
     .catch([]),
   immichRequest: z
-    .object({ apiKey: z.string(), label: z.string().nullable() })
+    .looseObject({ apiKey: z.string(), label: z.string().nullable() })
     .nullable()
     .catch(null),
 })

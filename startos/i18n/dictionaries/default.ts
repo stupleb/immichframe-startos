@@ -1,14 +1,7 @@
 export const DEFAULT_LANG = 'en_US'
 
 const dict = {
-  'Require access secret': 0,
-  'On, every ImmichFrame address carries the secret, and a screen without it asks for it. Off, the slideshow is public: anyone who can reach ImmichFrame sees your photos.': 1,
-  'Configure Access Secret': 2,
-  'Make the slideshow private, so it shows photos only at addresses that carry the access secret, or public, so anyone who can reach ImmichFrame sees it.': 3,
   'Slideshow Public': 4,
-  'Anyone who can reach ImmichFrame can now see the slideshow. Requiring the secret again restores the same one, so your frames keep working.': 5,
-  'Access Secret Required': 6,
-  'Every ImmichFrame address now carries this secret. A frame opened at one of them keeps it; a frame without it asks for it.': 7,
   'Immich account': 8,
   'Connect Immich': 10,
   'Ask Immich on this server to let the slideshow show one person’s photos. You approve the request in Immich’s tasks and choose the account there. Run it once for each person. Choosing an account that is already connected replaces its key and keeps its slideshow settings.': 11,
@@ -25,11 +18,7 @@ const dict = {
   'That Immich account is not connected': 23,
   'Immich Disconnected': 24,
   'The slideshow no longer shows ${email}’s photos, and the key ImmichFrame used is deleted from Immich.': 25,
-  'Reset Access Secret': 26,
-  'Replace the access secret with a new one, for example after a frame is lost. Every frame then has to be opened again at an ImmichFrame address.': 27,
-  'Every frame asks for the secret again until it is opened at an ImmichFrame address, or given the new secret.': 28,
   'New Access Secret': 29,
-  'Every ImmichFrame address now carries the new secret. Open one on each frame again.': 30,
   'Set Admin Password': 31,
   'Generate a new random password for the ImmichFrame admin page. Replaces any existing password.': 32,
   'Replaces the current admin password.': 33,
@@ -63,6 +52,20 @@ const dict = {
   'Cannot contain < or >': 62,
   'Approve ImmichFrame’s request for ${label} in Immich’s tasks. If you denied it, run Disconnect Immich to stop asking, or Connect Immich to ask again.': 63,
   'No Immich account is connected': 64,
+  Access: 65,
+  '- Private: a screen shows photos only when opened at a Slideshow address, which carries the access secret, or once the secret is typed in\n- Public: anyone who can reach ImmichFrame sees your photos': 66,
+  'Private (require the access secret)': 67,
+  Public: 68,
+  'Generate a new secret': 69,
+  'Replace the current secret, for example after losing a frame. Every frame then asks for it until it opens a Slideshow address again, or is given the new secret. A secret is always generated the first time the slideshow is made private.': 70,
+  'Manage Access': 71,
+  'Make the slideshow private, so a screen needs the access secret to show photos, or public.': 72,
+  'Anyone who can reach ImmichFrame can now see the slideshow. Making it private again keeps the same secret, so your frames keep working.': 73,
+  'Slideshow Private': 74,
+  'Every Slideshow address carries the access secret, which has not changed.': 75,
+  'Every Slideshow address now carries this secret. Open one on each frame, or type the secret on a frame that asks for it. It is not shown here again, but stays part of every Slideshow address.': 76,
+  'Choose whether the slideshow needs the access secret. Private is the default.': 77,
+  'Manage Access has not been run': 78,
 } as const
 
 /**
