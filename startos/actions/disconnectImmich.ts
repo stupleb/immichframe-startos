@@ -47,7 +47,7 @@ export const disconnectImmich = sdk.Action.withInput(
   async ({ effects }) => ({
     name: i18n('Disconnect Immich'),
     description: i18n(
-      'Remove an Immich account from the slideshow and delete the key ImmichFrame used for it, or withdraw a request still waiting for approval in Immich.',
+      'Remove an Immich account from every slideshow and delete the key ImmichFrame used for it, or withdraw a request still waiting for approval in Immich.',
     ),
     warning: null,
     allowedStatuses: 'only-running',
@@ -65,7 +65,7 @@ export const disconnectImmich = sdk.Action.withInput(
 
   async ({ effects, input }) => {
     const store = await storeJson.read().once()
-    if (!store?.adminPassword) throw new Error(i18n('No admin password is set'))
+    if (!store) throw new Error(i18n('That Immich account is not connected'))
     const connection = store.immichConnections.find(
       (c) => c.immichUserId === input.immichUserId,
     )
@@ -96,21 +96,34 @@ export const disconnectImmich = sdk.Action.withInput(
       }
     }
 
-    const settings = await readSettings(store.adminPassword)
-    await writeSettings(store.adminPassword, {
-      ...settings,
-      Accounts: settings.Accounts.filter((a) => a.apiKey !== apiKey),
-    })
-    await storeJson.merge(effects, {
-      immichConnections: store.immichConnections.filter(
-        (c) => c !== connection,
-      ),
-    })
+    for (const { port, adminPassword } of store.slideshows) {
+      if (!adminPassword) continue
+      const settings = await readSettings(port, adminPassword)
+      if (!settings.Accounts.some((a) => a.apiKey === apiKey)) continue
+      await writeSettings(port, adminPassword, {
+        ...settings,
+        Accounts: settings.Accounts.filter((a) => a.apiKey !== apiKey),
+      })
+    }
+    await storeJson.update(
+      effects,
+      (s) =>
+        s && {
+          ...s,
+          immichConnections: s.immichConnections.filter(
+            (c) => c.immichUserId !== connection.immichUserId,
+          ),
+          slideshows: s.slideshows.map((sl) => ({
+            ...sl,
+            accounts: sl.accounts.filter((a) => a !== connection.immichUserId),
+          })),
+        },
+    )
     return {
       version: '1',
       title: i18n('Immich Disconnected'),
       message: i18n(
-        'The slideshow no longer shows ${email}’s photos, and the key ImmichFrame used is deleted from Immich.',
+        'No slideshow shows ${email}’s photos any more, and the key ImmichFrame used is deleted from Immich.',
         { email: connection.email },
       ),
       result: null,

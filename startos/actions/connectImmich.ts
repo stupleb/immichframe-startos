@@ -11,6 +11,7 @@ import {
   newImmichKey,
   requestImmichAccess,
   revokeImmichAccess,
+  slideshowName,
   withImmichDependency,
 } from '../utils'
 
@@ -18,16 +19,34 @@ const { InputSpec, Value } = sdk
 
 const inputSpec = InputSpec.of({
   label: Value.text({
-    name: i18n('Who is it for?'),
+    name: i18n('Immich Account Email'),
     description: i18n(
-      'Shown with the request in Immich, so you choose the right account there.',
+      'The email of the Immich account whose photos to show. Immich shows it with the request, so you choose that account when you approve.',
     ),
     required: false,
     default: null,
     maxLength: 64,
+    inputmode: 'email',
     patterns: [
-      { regex: '^[^<>]*$', description: i18n('Cannot contain < or >') },
+      {
+        regex: '^[^\\s@<>]+@[^\\s@<>]+$',
+        description: i18n('Must be an email address'),
+      },
     ],
+  }),
+  slideshows: Value.dynamicMultiselect(async () => {
+    const slideshows = (await storeJson.read((s) => s.slideshows).once()) ?? []
+    return {
+      name: i18n('Show on'),
+      description: i18n(
+        'The slideshows that show this person’s photos once you approve the request in Immich.',
+      ),
+      values: Object.fromEntries(
+        slideshows.map((s) => [s.id, slideshowName(s.name)]),
+      ),
+      default: slideshows.length === 1 ? [slideshows[0].id] : [],
+      minLength: 1,
+    }
   }),
 })
 
@@ -39,7 +58,7 @@ export const connectImmich = sdk.Action.withInput(
     return {
       name: i18n('Connect Immich'),
       description: i18n(
-        'Ask Immich on this server to let the slideshow show one person’s photos. You approve the request in Immich’s tasks and choose the account there. Run it once for each person. Choosing an account that is already connected replaces its key and keeps its slideshow settings.',
+        'Ask Immich on this server to let slideshows show one person’s photos. You approve the request in Immich’s tasks and choose the account there. Run it once for each person. Choosing an account that is already connected replaces its key and keeps its slideshow settings.',
       ),
       warning: null,
       allowedStatuses: 'only-running',
@@ -63,10 +82,17 @@ export const connectImmich = sdk.Action.withInput(
   async ({ effects, input }) => {
     if (!(await immichRunning(effects)))
       throw new Error(i18n('Start Immich first'))
-    const previous = await storeJson.read((s) => s.immichRequest?.apiKey).once()
+    const store = await storeJson.read().once()
+    const previous = store?.immichRequest?.apiKey
+    const slideshows = input.slideshows.filter((id) =>
+      store?.slideshows.some((s) => s.id === id),
+    )
+    if (!slideshows.length)
+      throw new Error(i18n('Choose at least one slideshow'))
     const request = {
       apiKey: newImmichKey(),
       label: input.label?.trim() || null,
+      slideshows,
     }
 
     await withImmichDependency(effects, true, async () => {
@@ -99,7 +125,7 @@ export const connectImmich = sdk.Action.withInput(
       version: '1',
       title: i18n('Approve in Immich'),
       message: i18n(
-        'Open Immich’s tasks, approve ImmichFrame’s request and choose whose photos to show. ImmichFrame then adds that account to the slideshow, with its whole library. To add someone else, run Connect Immich again once this one is connected.',
+        'Open Immich’s tasks, approve ImmichFrame’s request and choose whose photos to show. ImmichFrame then adds that account to the slideshows you chose, with its whole library. To add someone else, run Connect Immich again once this one is connected.',
       ),
       result: null,
     }

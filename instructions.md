@@ -10,33 +10,35 @@
 
 ## What you get on StartOS
 
-The **Slideshow** interface is the photo slideshow you open on each frame. The **Admin** interface is where you choose the photos and how they're shown. ImmichFrame keeps no photos of its own: it reads them from Immich each time.
+The **Slideshow** interface is the photo slideshow you open on each frame. The **Admin** interface is where you choose the photos and how they're shown. ImmichFrame reads your photos from Immich, and keeps copies on your server only if you tick **Download images** in the admin page.
 
-Your photos are private by default. While the slideshow is private, every **Slideshow** address carries an access secret, and a screen opened without it asks for the secret before showing any photos.
+Your photos are private by default. While a slideshow is private, a screen asks for its access secret before showing any photos.
+
+You can run several slideshows, each with its own photos, display settings, addresses and access secret, for example one for the living-room frame and one for a tablet. See **More than one slideshow** below.
 
 ## Getting set up
 
-1. Run **Set Admin Password** and copy the password it shows.
-2. Run **Manage Access** and keep **Private**, unless anyone who can reach ImmichFrame may see your photos. You don't need to copy the secret it shows: every **Slideshow** address carries it.
-3. Give ImmichFrame some photos:
-   - If Immich runs on this server, run **Connect Immich**, saying who it's for if you like. Then open Immich's tasks, approve ImmichFrame's request, and choose whose photos to show. The slideshow then shows that person's whole library. Repeat for each person.
+1. Run **Manage Slideshows**. Keep **Private**, unless anyone who can reach ImmichFrame may see your photos, and pick your **Time Zone** if you'll show calendars. The **Access Secret** and **Admin Password** are filled in for you; come back to this action whenever you need to copy them.
+2. Give ImmichFrame some photos:
+   - If Immich runs on this server, run **Connect Immich**, entering the email of the Immich account to show if you like. Then open Immich's tasks, approve ImmichFrame's request, and choose that account. The slideshow then shows that person's whole library. Repeat for each person.
    - For an Immich server elsewhere, create an API key in Immich under **Account Settings → API Keys**, with the permissions the configuration reference lists. Then open the **Admin** interface, sign in, and add an account with that server's address and the key.
-4. Open a **Slideshow** address on each frame, in its browser or in the ImmichFrame app. The frame remembers the access secret from the address, so you only do this once per frame.
-5. If you add calendars to the slideshow, run **Set Time Zone**.
+3. On each frame, open a **Slideshow** address and enter the access secret from **Manage Slideshows**. In the ImmichFrame app, paste the address and the secret into their own fields; a browser asks for the secret on the page. The frame remembers it, so you only do this once per frame.
 
 ## Using ImmichFrame
 
 ### Frames
 
-Use an `https` address of the **Slideshow** interface, on a browser that trusts your server's root certificate authority. The ImmichFrame Android app, Frameo frames included, never trusts a certificate authority you install: give it a public domain with a trusted certificate, or a plain `http` address once your home network's gateway is marked secure in StartOS (see [Secure Gateways](https://docs.start9.com/start-os/gateways.html#secure-gateways)). That setting covers every service on your server, and anything on your network can then read those addresses, the access secret included. A domain added to **Slideshow** also opens the **Admin** page, at `/admin`, behind the admin password.
+Use an `https` address of the **Slideshow** interface, on a browser that trusts your server's root certificate authority. The ImmichFrame Android app, Frameo frames included, never trusts a certificate authority you install: give it a public domain with a trusted certificate, or a plain `http` address once your home network's gateway is marked secure in StartOS (see [Secure Gateways](https://docs.start9.com/start-os/gateways.html#secure-gateways)). That setting covers every service on your server, and anything on your network can then read those addresses, the access secret included. A domain added to **Slideshow** also opens the **Admin** page, at `/admin`, behind that slideshow's admin password.
 
 ### The admin page
 
-Open the **Admin** interface and sign in with the password from **Set Admin Password**. Changes apply without a restart. Frames pick up display settings the next time they load the page.
+Open the **Admin** interface and sign in with that slideshow's **Admin Password** from **Manage Slideshows**. Changes apply without a restart. Frames pick up display settings the next time they load the page.
 
 - **Accounts** hold your Immich accounts and which of their photos to show. See below.
 - **Weather** needs an OpenWeatherMap API key. **Calendars** take `.ics` links.
-- Two settings on this page belong to StartOS: the admin password and the access secret. To change them, use **Set Admin Password** and **Manage Access**. An access secret entered on this page is replaced the next time ImmichFrame starts.
+- Some settings on this page belong to StartOS: the admin password, the access secret, and which accounts added by **Connect Immich** the slideshow shows. To change them, use **Manage Slideshows**. A change made on this page is replaced. How each account's photos are chosen belongs to this page.
+
+ImmichFrame contacts some services itself: an Immich server elsewhere, OpenWeatherMap for the weather, and the sites your calendar links point to. If you publish a slideshow through a tunnel such as StartTunnel to keep your home IP private, send ImmichFrame's outbound traffic through that tunnel too, or those services see your home IP. If you use the tunnel for another reason, such as a port your router can't forward, there's nothing to change.
 
 ### Choosing which photos to show
 
@@ -50,10 +52,18 @@ A photo shows when it matches any of these. **Excluded albums**, the date fields
 
 A shared album shows only the photos of the account it's set on, not those other people added. To show everyone's, run **Connect Immich** for each person, approve it with their account, and give each account the same album ID.
 
+### More than one slideshow
+
+Every slideshow is set up on its own: its own **Slideshow** and **Admin** interfaces, its own accounts and filters, its own access secret, admin password and time zone. Someone with one slideshow's admin password can't sign in to another's, so you can hand a slideshow's **Admin** page to whoever owns that frame.
+
+1. Run **Manage Slideshows**, add a slideshow and give it a name, like "Tablet". Tick the Immich accounts it shows, and save. It gets two new interfaces, **Slideshow (Tablet)** and **Admin (Tablet)**, and your other slideshows keep running.
+2. Open **Admin (Tablet)**, sign in, and choose its photos as above.
+3. On the tablet, open one of the **Slideshow (Tablet)** addresses and enter the Tablet slideshow's access secret. The ImmichFrame Android app needs a public domain or a plain `http` address, as under **Frames**, and each slideshow you reach over a public domain needs a domain of its own.
+
+When you connect someone with **Connect Immich**, tick the slideshows that should show them. To change that later, or to remove a slideshow, use **Manage Slideshows**. Your first slideshow can be renamed but not removed. Removing a slideshow deletes its photo choices and settings, and its addresses along with any domains you added to them; adding it back later gives it new addresses.
+
 ### Actions
 
-- **Set Admin Password** — make a new password for the admin page. The old one stops working.
-- **Manage Access** — make the slideshow private or public. Switching back to private keeps the same secret, so frames that already had it keep working. **Generate a new secret** replaces it, for example after losing a frame; open a **Slideshow** address once more on each frame afterwards.
-- **Set Time Zone** — the time zone calendar events are shown in. The clock on each frame uses that frame's own time zone.
-- **Connect Immich** — ask Immich on this server for one person's photos. You approve the request in Immich's tasks and choose the account there, and ImmichFrame then adds it to the slideshow with its own read-only key, which Immich lists as "StartOS: immichframe". Choosing an account that's already connected replaces its key and keeps the account's settings. If you denied the request, run it again.
-- **Disconnect Immich** — remove an account from the slideshow and delete its key from Immich, or withdraw a request you haven't approved.
+- **Manage Slideshows** — add, rename and remove slideshows, choose which connected accounts each one shows, and make each one private or public. Each private slideshow's **Access Secret** is shown here, to copy onto its frames. Switching back to private keeps the same secret, so frames that already had it keep working. **Generate** makes a new one, for example after losing a frame; enter it again on each of that slideshow's frames afterwards. Each slideshow's **Admin Password** and **Time Zone** are here too. Renaming a slideshow, or changing its admin password or time zone, restarts that slideshow only.
+- **Connect Immich** — ask Immich on this server for one person's photos. You approve the request in Immich's tasks and choose the account there, and ImmichFrame then adds it to the slideshows you ticked, with its own read-only key, which Immich lists as "StartOS: immichframe". Choosing an account that's already connected replaces its key and keeps the account's settings. If you denied the request, run it again.
+- **Disconnect Immich** — remove an account from every slideshow and delete its key from Immich, or withdraw a request you haven't approved.

@@ -1,12 +1,30 @@
 import { FileHelper, z } from '@start9labs/start-sdk'
 import { sdk } from '../sdk'
+import { mainSlideshowId, uiPort } from '../utils'
+
+const slideshow = z.looseObject({
+  id: z.string(),
+  name: z.string().nullable().catch(null),
+  port: z.number(),
+  access: z.enum(['private', 'public']).optional().catch(undefined),
+  secret: z.string().optional().catch(undefined),
+  adminPassword: z.string().optional().catch(undefined),
+  timeZone: z.string().catch('UTC'),
+  accounts: z.array(z.string()).catch([]),
+})
+
+export type Slideshow = z.infer<typeof slideshow>
 
 const shape = z.looseObject({
-  adminPassword: z.string().nullable().catch(null),
-  // unset until the owner chooses in Manage Access
-  access: z.enum(['private', 'public']).optional().catch(undefined),
-  frameSecret: z.string().optional().catch(undefined),
-  timeZone: z.string().catch('UTC'),
+  slideshows: z.array(slideshow).catch(() => [
+    {
+      id: mainSlideshowId,
+      name: null,
+      port: uiPort,
+      timeZone: 'UTC',
+      accounts: [],
+    },
+  ]),
   immichConnections: z
     .array(
       z.looseObject({
@@ -17,12 +35,21 @@ const shape = z.looseObject({
     )
     .catch([]),
   immichRequest: z
-    .looseObject({ apiKey: z.string(), label: z.string().nullable() })
+    .looseObject({
+      apiKey: z.string(),
+      label: z.string().nullable(),
+      slideshows: z.array(z.string()).catch([]),
+    })
     .nullable()
     .catch(null),
 })
 
-export const storeJson = FileHelper.json(
-  { base: sdk.volumes.startos, subpath: 'store.json' },
-  shape,
+const location = { base: sdk.volumes.startos, subpath: 'store.json' }
+
+export const storeJson = FileHelper.json(location, shape)
+
+// For migrations, which see store.json as an older release wrote it.
+export const rawStoreJson = FileHelper.json(
+  location,
+  z.looseObject({}).catch({}),
 )

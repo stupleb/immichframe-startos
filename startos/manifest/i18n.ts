@@ -21,13 +21,13 @@ export const long = {
 
 export const immichDescription = {
   en_US:
-    'Connect Immich adds accounts from Immich on this server to the slideshow',
+    'Connect Immich adds accounts from Immich on this server to slideshows',
   es_ES:
-    'Conectar Immich añade a la presentación cuentas de Immich de este servidor',
+    'Conectar Immich añade a las presentaciones cuentas de Immich de este servidor',
   de_DE:
-    'Immich verbinden fügt der Diashow Konten aus Immich auf diesem Server hinzu',
+    'Immich verbinden fügt Diashows Konten aus Immich auf diesem Server hinzu',
   pl_PL:
-    'Połącz Immich dodaje do pokazu slajdów konta z Immich na tym serwerze',
+    'Połącz Immich dodaje do pokazów slajdów konta z Immich na tym serwerze',
   fr_FR:
-    'Connecter Immich ajoute au diaporama des comptes Immich de ce serveur',
+    'Connecter Immich ajoute aux diaporamas des comptes Immich de ce serveur',
 }
