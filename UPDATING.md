@@ -35,6 +35,9 @@ Ignore `latest`. Both `linux/amd64` and `linux/arm64` must be listed.
    - The Dockerfile still runs as uid 1000 with the settings database in
      `/app/Config`, and `PooledImmichFrameLogic.cs` still downloads to
      `ImageCache` beside the executable.
+   - The final stage is still an ASP.NET Core image, which listens on the
+     port in `ASPNETCORE_HTTP_PORTS`; every slideshow after the first runs on
+     its own port.
    - The **API Key Permissions** list in `docs/docs/getting-started/configuration.md`
      still matches `immichKeyPermissions` in `startos/utils.ts`, which adds
      `user.read`. A new permission also has to be added to

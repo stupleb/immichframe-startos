@@ -8,8 +8,30 @@ import { i18n } from './i18n'
 import { sdk } from './sdk'
 
 export const uiPort = 8080
-export const uiHostId = 'ui-multi'
-export const uiInterfaceId = 'ui'
+// The first slideshow keeps the host and interface ids that domains and frames already point at.
+export const mainSlideshowId = 'main'
+
+export const slideshowIds = (id: string) =>
+  id === mainSlideshowId
+    ? { host: 'ui-multi', ui: 'ui', admin: 'admin', subpath: null }
+    : {
+        host: `slideshow-${id}`,
+        ui: `ui-${id}`,
+        admin: `admin-${id}`,
+        subpath: `slideshows/${id}`,
+      }
+
+export const newSlideshowId = () =>
+  utils.getDefaultString({ charset: 'a-z,0-9', len: 8 })
+
+export const freePort = (used: number[]) => {
+  let port = uiPort + 1
+  while (used.includes(port)) port++
+  return port
+}
+
+export const slideshowName = (name: string | null) =>
+  name ? i18n('Slideshow (${name})', { name }) : i18n('Slideshow')
 
 export const configPath = '/app/Config'
 export const cachePath = '/app/ImageCache'
@@ -32,9 +54,6 @@ const immichKeyPermissions = [
   'user.read',
 ]
 
-export const getRandomString = (len: number) =>
-  utils.getDefaultString({ charset: 'a-z,A-Z,0-9', len })
-
 type FrameAccount = Record<string, unknown> & {
   immichServerUrl: string
   apiKey: string
@@ -45,11 +64,12 @@ type FrameSettings = {
 }
 
 async function adminApi<R>(
+  port: number,
   adminPassword: string,
   path: string,
   init: { method: 'GET' | 'PUT' | 'POST'; body?: unknown } = { method: 'GET' },
 ): Promise<R> {
-  const res = await fetch(`http://127.0.0.1:${uiPort}/api/Admin/${path}`, {
+  const res = await fetch(`http://127.0.0.1:${port}/api/Admin/${path}`, {
     method: init.method,
     headers: {
       Authorization: `Bearer ${adminPassword}`,
@@ -57,6 +77,13 @@ async function adminApi<R>(
     },
     body: init.body === undefined ? undefined : JSON.stringify(init.body),
     signal: AbortSignal.timeout(30_000),
+  }).catch((cause) => {
+    throw new Error(
+      i18n(
+        'A slideshow is not answering. Try again once ImmichFrame is running.',
+      ),
+      { cause },
+    )
   })
   if (!res.ok)
     throw new Error(
@@ -67,11 +94,15 @@ async function adminApi<R>(
   return res.json()
 }
 
-export const readSettings = (adminPassword: string) =>
-  adminApi<FrameSettings>(adminPassword, 'Settings')
+export const readSettings = (port: number, adminPassword: string) =>
+  adminApi<FrameSettings>(port, adminPassword, 'Settings')
 
-export const writeSettings = (adminPassword: string, settings: FrameSettings) =>
-  adminApi<{ warnings: string[] }>(adminPassword, 'Settings', {
+export const writeSettings = (
+  port: number,
+  adminPassword: string,
+  settings: FrameSettings,
+) =>
+  adminApi<{ warnings: string[] }>(port, adminPassword, 'Settings', {
     method: 'PUT',
     body: settings,
   })
