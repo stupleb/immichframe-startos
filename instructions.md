@@ -56,7 +56,7 @@ An account shows its whole library until you narrow it, including one added by *
 
 A photo shows when it matches any of these. **Excluded albums**, the date fields and **Minimum rating** then narrow that set, and ticking **Archived** or **Videos** adds archived photos or videos. **Memories** adds the day's Immich memories; on its own, it shows only those. To show a hand-picked set, put the photos in an Immich album and use its ID.
 
-A shared album shows only the photos of the account it's set on, not those other people added. To show everyone's, run **Connect Immich** for each person, approve it with their account, and give each account the same album ID.
+A shared album shows only the photos of the account it's set on, not those other people added. To show everyone's, run **Connect Immich** for each person, approve it with their account, and give each account the same album ID. A person, though, usually has a different ID in each account, so copy each account's **People** IDs while signed in to Immich as that account.
 
 ### More than one slideshow
 
