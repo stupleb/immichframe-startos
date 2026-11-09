@@ -28,7 +28,13 @@ You can run several slideshows, each with its own photos, display settings, addr
 
 ### Frames
 
-Use an `https` address of the **Slideshow** interface, on a browser that trusts your server's root certificate authority. The ImmichFrame Android app, Frameo frames included, never trusts a certificate authority you install: give it a public domain with a trusted certificate, or a plain `http` address once your home network's gateway is marked secure in StartOS (see [Secure Gateways](https://docs.start9.com/start-os/gateways.html#secure-gateways)). That setting covers every service on your server, and anything on your network can then read those addresses, the access secret included. A domain added to **Slideshow** also opens the **Admin** page, at `/admin`, behind that slideshow's admin password.
+Use an `https` address of the **Slideshow** interface, on a browser that trusts your server's root certificate authority. The ImmichFrame Android app doesn't trust a root certificate authority installed from Android's settings, even when your browser does. Give it one of these:
+
+- A public domain with a trusted certificate.
+- A plain `http` address, once your home network's gateway is marked secure in StartOS (see [Secure Gateways](https://docs.start9.com/start-os/gateways.html#secure-gateways)). That setting covers every service on your server, and anything on your network can then read those addresses, the access secret included.
+- On a device with root access, the `https` address, once your root certificate authority is in Android's system certificate store. The community guide [Turning a Frameo photo frame into an Immich slideshow](https://community.start9.com/t/guide-turning-a-frameo-photo-frame-into-an-immich-slideshow/5868) shows how on one frame.
+
+A domain added to **Slideshow** also opens the **Admin** page, at `/admin`, behind that slideshow's admin password.
 
 ### The admin page
 
@@ -58,7 +64,7 @@ Every slideshow is set up on its own: its own **Slideshow** and **Admin** interf
 
 1. Run **Manage Slideshows**, add a slideshow and give it a name, like "Tablet". Tick the Immich accounts it shows, and save. It gets two new interfaces, **Slideshow (Tablet)** and **Admin (Tablet)**, and your other slideshows keep running.
 2. Open **Admin (Tablet)**, sign in, and choose its photos as above.
-3. On the tablet, open one of the **Slideshow (Tablet)** addresses and enter the Tablet slideshow's access secret. The ImmichFrame Android app needs a public domain or a plain `http` address, as under **Frames**, and each slideshow you reach over a public domain needs a domain of its own.
+3. On the tablet, open one of the **Slideshow (Tablet)** addresses and enter the Tablet slideshow's access secret. For the ImmichFrame Android app, use one of the addresses under **Frames**; each slideshow you reach over a public domain needs a domain of its own.
 
 When you connect someone with **Connect Immich**, tick the slideshows that should show them. To change that later, or to remove a slideshow, use **Manage Slideshows**. Your first slideshow can be renamed but not removed. Removing a slideshow deletes its photo choices and settings, and its addresses along with any domains you added to them; adding it back later gives it new addresses.
 
