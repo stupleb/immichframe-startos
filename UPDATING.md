@@ -1,8 +1,7 @@
 # Updating the upstream version
 
 Upstream is ImmichFrame's official image on GHCR, `ghcr.io/immichframe/immichframe`,
-pinned by tag and digest as the `IMAGE` build arg in `startos/manifest/index.ts`; the root
-`Dockerfile` only upgrades its CA store. It is built from the
+pinned by tag and digest in `startos/manifest/index.ts`. It is built from the
 [immichFrame/ImmichFrame](https://github.com/immichFrame/ImmichFrame) release of the
 same name, and the package version is that tag without its `v`, e.g. `1.0.39.0:0`.
 
@@ -19,7 +18,7 @@ Ignore `latest`. Both `linux/amd64` and `linux/arm64` must be listed.
 
 ## Applying the bump
 
-1. Set the `IMAGE` build arg of `images.immichframe.source.dockerBuild` to
+1. Set `images.immichframe.source.dockerTag` to
    `ghcr.io/immichframe/immichframe:vX.Y.Z.W@sha256:<digest>`, with the index digest from
    `docker buildx imagetools inspect ghcr.io/immichframe/immichframe:vX.Y.Z.W`, and the
    version in `startos/versions/current.ts`, then read the release notes, especially any
@@ -27,6 +26,9 @@ Ignore `latest`. Both `linux/amd64` and `linux/arm64` must be listed.
 2. Check what the package relies on, in the new tag:
    - `ImmichFrame.WebApi/Services/AdminAuthService.cs` still reads
      `IMMICHFRAME_ADMIN_PASSWORD` and lets it win over the stored password.
+   - `ImmichFrame.WebApi/Services/SettingsSource.cs` still keeps settings in the
+     database while `IMMICHFRAME_CONFIG_SOURCE` is unset. Its `file` mode turns
+     off the admin API the package writes through.
    - `ImmichFrame.WebApi/Controllers/AdminController.cs` still serves
      `GET`/`PUT /api/Admin/Settings` behind `Bearer <admin password>`, and
      `ServerSettings.cs` still names `General.authenticationSecret`,
