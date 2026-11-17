@@ -21,7 +21,7 @@ You can run several slideshows, each with its own photos, display settings, addr
 1. Run **Manage Slideshows**. Keep **Private**, unless anyone who can reach ImmichFrame may see your photos, and pick your **Time Zone** if you'll show calendars. The **Access Secret** and **Admin Password** are filled in for you; come back to this action whenever you need to copy them.
 2. Give ImmichFrame some photos:
    - If Immich runs on this server, run **Connect Immich**, entering the email of the Immich account to show if you like. Then open Immich's tasks, approve ImmichFrame's request, and choose that account. The slideshow then shows that person's whole library. Repeat for each person.
-   - For an Immich server elsewhere, create an API key in Immich under **Account Settings → API Keys**, with the permissions the configuration reference lists. Then open the **Admin** interface, sign in, and add an account with that server's address and the key.
+   - For an Immich server elsewhere, which must run Immich 3.3.0 or newer, create an API key in Immich under **Account Settings → API Keys**, with the permissions the configuration reference lists. Then open the **Admin** interface, sign in, and add an account with that server's address and the key.
 3. On each frame, open a **Slideshow** address and enter the access secret from **Manage Slideshows**. In the ImmichFrame app, paste the address and the secret into their own fields; a browser asks for the secret on the page. The frame remembers it, so you only do this once per frame.
 
 ## Using ImmichFrame
@@ -54,7 +54,7 @@ An account shows its whole library until you narrow it, including one added by *
 2. For tags, enter each tag's full name in **Tags**, one per line, like `Travel/Europe`. For favorites, tick **Favorites**.
 3. Select **Save**.
 
-A photo shows when it matches any of these. **Excluded albums**, the date fields and **Minimum rating** then narrow that set, and ticking **Archived** or **Videos** adds archived photos or videos. **Memories** adds the day's Immich memories; on its own, it shows only those. To show a hand-picked set, put the photos in an Immich album and use its ID.
+A photo shows when it matches any of these. **Excluded albums**, the date fields and **Minimum rating** then narrow that set, and ticking **Archived** or **Videos** adds archived photos or videos. **Memories** adds the day's Immich memories: **On this day memories** and **Birthday memories** choose which kinds, and a birthday memory needs the person's birth date set in Immich. On its own, **Memories** shows only those. To show a hand-picked set, put the photos in an Immich album and use its ID.
 
 A shared album shows only the photos of the account it's set on, not those other people added. To show everyone's, run **Connect Immich** for each person, approve it with their account, and give each account the same album ID. A person, though, usually has a different ID in each account, so copy each account's **People** IDs while signed in to Immich as that account.
 

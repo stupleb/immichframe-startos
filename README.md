@@ -32,7 +32,7 @@
 
 ## Image and Container Runtime
 
-The package runs upstream's published image, for x86_64 and aarch64, with its own entrypoint (`dotnet ImmichFrame.WebApi.dll`) as uid 1000. The root `Dockerfile` upgrades the image's `ca-certificates` package, so its trust store drops the compromised eMudhra certificate authority (emSign ECC Root CA - G3), and fails the build if that root remains. It's a temporary layer that comes out once upstream ships an image built on a fixed store.
+The package runs upstream's published image unmodified, for x86_64 and aarch64, with its own entrypoint (`dotnet ImmichFrame.WebApi.dll`) as uid 1000.
 
 Each slideshow is a separate ImmichFrame server: upstream has no way for frames to show different photos from one server. Slideshow `<id>` (`main` for the first) gets a subcontainer `immichframe-<id>` running three steps in order:
 
@@ -74,7 +74,7 @@ The package writes no ImmichFrame configuration file; each server's settings dat
 
 Immich is an optional dependency, declared only while **Connect Immich** has an account connected or a request waiting. It must be running, but no health check is required. Uninstalling Immich with accounts still connected leaves it declared, and listed as missing, until **Disconnect Immich** removes the last one.
 
-ImmichFrame reaches it over the StartOS bridge with a key it generates itself. **Connect Immich** sends Immich only the key's SHA-256, through Immich's hidden `request-access` action, and the user approves the request in Immich's tasks, choosing the account there. Immich then stores the key under that account as `StartOS: immichframe`, one key per account. The key carries `album.read`, `album.statistics`, `asset.read`, `asset.statistics`, `asset.view`, `face.read`, `memory.read`, `person.read`, `person.statistics`, `tag.read` and `user.read`; the last lets ImmichFrame read which account was chosen from `GET /api/users/me`. **Disconnect Immich**, and uninstalling ImmichFrame, delete keys through Immich's `revoke-access` action. Immich servers elsewhere are added by hand in a slideshow's admin page and are not dependencies.
+ImmichFrame reaches it over the StartOS bridge with a key it generates itself. **Connect Immich** sends Immich only the key's SHA-256, through Immich's hidden `request-access` action, and the user approves the request in Immich's tasks, choosing the account there. Immich then stores the key under that account as `StartOS: immichframe`, one key per account. The key carries `album.read`, `album.statistics`, `asset.read`, `asset.statistics`, `asset.view`, `face.read`, `memory.read`, `person.read`, `person.statistics`, `tag.read` and `user.read`; the last lets ImmichFrame read which account was chosen from `GET /api/users/me`. **Disconnect Immich**, and uninstalling ImmichFrame, delete keys through Immich's `revoke-access` action. Immich servers elsewhere are added by hand in a slideshow's admin page and are not dependencies. Every Immich server must run Immich 3.3.0 or newer; ImmichFrame logs an older one as unsupported, and the slideshow may not work.
 
 ## Network Access and Interfaces
 
@@ -147,7 +147,7 @@ What differs from upstream ImmichFrame, or is out of reach on StartOS:
 
 ```yaml
 package_id: immichframe
-image: ghcr.io/immichframe/immichframe # CA store upgraded by Dockerfile
+image: ghcr.io/immichframe/immichframe
 architectures: [x86_64, aarch64]
 subcontainers: [immichframe-<id>] # one per slideshow; <id> is main for the first
 volumes:
